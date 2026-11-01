@@ -62,7 +62,7 @@ document.querySelector('#lang').onclick=()=>{lang=lang==='vi'?'en':'vi';say('ChÃ
 document.querySelector('#enter').onclick=()=>document.querySelector('#welcome').style.display='none';
 let previous=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-previous)/1000,.04);previous=now;
 if(!sitting&&!praying){let forward=0,side=0;if(keys.has('w')||keys.has('arrowup'))forward=1;if(keys.has('s')||keys.has('arrowdown'))forward=-1;if(keys.has('a')||keys.has('arrowleft'))side=-1;if(keys.has('d')||keys.has('arrowright'))side=1;const len=Math.hypot(forward,side)||1;const speed=4.1*dt;const dx=(side*Math.cos(yaw)+forward*Math.sin(yaw))*speed/len;const dz=(-forward*Math.cos(yaw)+side*Math.sin(yaw))*speed/len;player.group.position.x=THREE.MathUtils.clamp(player.group.position.x+dx,-10,10);player.group.position.z=THREE.MathUtils.clamp(player.group.position.z+dz,-12,12);if(forward||side){player.group.rotation.y=Math.atan2(dx,dz);}}
-player.group.position.y=sitting?.0:0;
+player.group.position.y=0;
 if(praying){player.armL.rotation.z=-.85;player.armR.rotation.z=.85}else if(sitting){player.armL.rotation.z=-.45;player.armR.rotation.z=.45}else{player.armL.rotation.z=-.22+Math.sin(now*.009)*.08;player.armR.rotation.z=.22-Math.sin(now*.009)*.08}
 congregation.forEach((p,i)=>{p.group.position.y=.015*Math.sin(now*.0015+p.phase);p.armL.rotation.z=-.25+Math.sin(now*.001+p.phase)*.025;p.armR.rotation.z=.25-Math.sin(now*.001+p.phase)*.025});
 const target=player.group.position.clone();const desired=new THREE.Vector3(target.x+Math.sin(yaw)*7,4.1,target.z+Math.cos(yaw)*7);camera.position.lerp(desired,.09);camera.lookAt(target.x,1.2,target.z-1.5);renderer.render(scene,camera)}
