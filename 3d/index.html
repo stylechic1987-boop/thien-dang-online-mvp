@@ -44,10 +44,29 @@ for(let z=-8;z<=7;z+=5){for(let x of [-7,7]){box(scene,x,4.2,z,.12,3.2,.16,wood)
 for(let row=0;row<5;row++){const z=5-row*3;for(const x of [-6,-3.4,3.4,6]){box(scene,x,.85,z,2.05,.18,1.05,woodLight);box(scene,x,1.28,z+.43,2.05,.9,.16,wood);for(const dx of [-.85,.85])box(scene,x+dx,.42,z, .14,.85,.18,wood)}}
 // decorative lamps
 for(const x of [-8,8])for(const z of [-8,0,8]){cyl(scene,x,5.7,z,.06,.06,1.2,gold);sphere(scene,x,5,z,.22,mat(0xffd88a,.25,0.1))}
-function makePerson(x,z,shirt,skin=0xe5b99a){const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);const cloth=mat(shirt),face=mat(skin),hair=mat(0x3b2a22);cyl(g,0,.92,0,.31,.37,.95,cloth);sphere(g,0,1.62,0,.27,face);sphere(g,0,1.79,-.035,.25,hair);const armL=cyl(g,-.38,1.02,0,.095,.12,.72,cloth);armL.rotation.z=-.22;const armR=cyl(g,.38,1.02,0,.095,.12,.72,cloth);armR.rotation.z=.22;box(g,0,.48,.02,.48,.12,.55,dark);return {group:g,armL,armR,baseY:0,phase:Math.random()*6}}
+function makePerson(x,z,shirt,skin=0xe5b99a){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const cloth=mat(shirt),face=mat(skin),hair=mat(0x3b2a22),shoe=mat(0x342d2a);
+ const body=new THREE.Group();body.position.y=.88;g.add(body);
+ cyl(body,0,.43,0,.3,.35,.86,cloth);
+ sphere(body,0,1.02,0,.255,face);sphere(body,0,1.2,-.035,.245,hair);
+ const armL=new THREE.Group();armL.position.set(-.32,.78,0);body.add(armL);
+ const armR=new THREE.Group();armR.position.set(.32,.78,0);body.add(armR);
+ const a1=cyl(armL,0,-.3,0,.09,.105,.62,cloth);a1.rotation.z=-.12;
+ const a2=cyl(armR,0,-.3,0,.09,.105,.62,cloth);a2.rotation.z=.12;
+ const handL=sphere(armL,0,-.64,.01,.09,face),handR=sphere(armR,0,-.64,.01,.09,face);
+ const legL=new THREE.Group();legL.position.set(-.16,.12,0);g.add(legL);
+ const legR=new THREE.Group();legR.position.set(.16,.12,0);g.add(legR);
+ cyl(legL,0,-.23,0,.13,.15,.52,dark);box(legL,0,-.49,.11,.25,.12,.4,shoe);
+ cyl(legR,0,-.23,0,.13,.15,.52,dark);box(legR,0,-.49,.11,.25,.12,.4,shoe);
+ const book=box(body,0,.13,.31,.34,.045,.25,mat(0x6d4328));book.visible=false;
+ return {group:g,body,armL,armR,legL,legR,book,phase:Math.random()*6};
+}
+function poseSeated(p,seated){p.seated=seated;p.group.position.y=seated?-.02:0;p.body.rotation.x=seated?-.12:0;p.legL.rotation.x=seated?-1.12:0;p.legR.rotation.x=seated?-1.12:0;p.book.visible=seated;}
+function posePrayer(p,on){p.praying=on;p.armL.rotation.z=on?-.82:0;p.armR.rotation.z=on?.82:0;p.armL.rotation.x=on?-.35:0;p.armR.rotation.x=on?-.35:0;}
 const player=makePerson(0,7,0x315b82,0xe5b99a);player.group.scale.setScalar(1.08);
 const congregation=[];const outfits=[0x8a5b50,0x536e60,0x8a754d,0x657b91,0x9a7962,0x5b6677,0x9b6d76,0x627c75];
-for(let i=0;i<12;i++){const row=Math.floor(i/4),col=i%4,x=[-6,-3.4,3.4,6][col],z=5-row*3;const p=makePerson(x,z-.15,outfits[i%outfits.length]);p.group.scale.setScalar(.78);p.group.rotation.y=Math.PI;p.group.userData.pew=true;congregation.push(p)}
+for(let i=0;i<12;i++){const row=Math.floor(i/4),col=i%4,x=[-6,-3.4,3.4,6][col],z=5-row*3;const p=makePerson(x,z-.15,outfits[i%outfits.length]);p.group.scale.setScalar(.78);p.group.rotation.y=Math.PI;p.group.userData.pew=true;poseSeated(p,true);congregation.push(p)}
 // Simple decorative statue silhouette behind altar
 const statue=makePerson(0, -11.7,0xe6dfce,0xd5a783);statue.group.scale.setScalar(1.35);statue.group.rotation.y=Math.PI;
 const keys=new Set();let yaw=0,drag=false,lastX=0,sitting=false,praying=false,lang='vi';
@@ -55,16 +74,19 @@ addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(['arrowup','arro
 document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.key;b.addEventListener('pointerdown',e=>{e.preventDefault();keys.add(k)});['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>keys.delete(k)))});
 renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX});addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(drag){yaw-=(e.clientX-lastX)*.006;lastX=e.clientX}});
 function say(vi,en){status.textContent=lang==='vi'?vi:en}
-document.querySelector('#pray').onclick=()=>{praying=!praying;sitting=false;say(praying?'Bạn đang dành phút thinh lặng cầu nguyện.':'Bạn đã kết thúc giờ cầu nguyện.','You are taking a quiet moment to pray.');};
-document.querySelector('#sit').onclick=()=>{sitting=true;praying=false;say('Bạn đang ngồi yên lặng và đọc Kinh Thánh.','You are seated quietly, reading the Bible.');};
-document.querySelector('#stand').onclick=()=>{sitting=false;praying=false;say('Bạn đã đứng dậy. Hãy tiếp tục hành trình.','You are standing. Continue your journey.');};
+document.querySelector('#pray').onclick=()=>{praying=!praying;sitting=false;poseSeated(player,false);posePrayer(player,praying);say(praying?'Bạn đang dành phút thinh lặng cầu nguyện.':'Bạn đã kết thúc giờ cầu nguyện.','You are taking a quiet moment to pray.');};
+document.querySelector('#sit').onclick=()=>{sitting=true;praying=false;posePrayer(player,false);poseSeated(player,true);say('Bạn đang ngồi yên lặng và đọc Kinh Thánh.','You are seated quietly, reading the Bible.');};
+document.querySelector('#stand').onclick=()=>{sitting=false;praying=false;poseSeated(player,false);posePrayer(player,false);say('Bạn đã đứng dậy. Hãy tiếp tục hành trình.','You are standing. Continue your journey.');};
 document.querySelector('#lang').onclick=()=>{lang=lang==='vi'?'en':'vi';say('Chào mừng bạn đến Nhà thờ Thánh Tâm','Welcome to Sacred Heart Church');document.querySelector('#pray').textContent=lang==='vi'?'🙏 Cầu nguyện':'🙏 Pray';document.querySelector('#sit').textContent=lang==='vi'?'📖 Ngồi đọc':'📖 Read';document.querySelector('#stand').textContent=lang==='vi'?'🚶 Đứng dậy':'🚶 Stand';};
 document.querySelector('#enter').onclick=()=>document.querySelector('#welcome').style.display='none';
 let previous=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-previous)/1000,.04);previous=now;
 if(!sitting&&!praying){let forward=0,side=0;if(keys.has('w')||keys.has('arrowup'))forward=1;if(keys.has('s')||keys.has('arrowdown'))forward=-1;if(keys.has('a')||keys.has('arrowleft'))side=-1;if(keys.has('d')||keys.has('arrowright'))side=1;const len=Math.hypot(forward,side)||1;const speed=4.1*dt;const dx=(side*Math.cos(yaw)+forward*Math.sin(yaw))*speed/len;const dz=(-forward*Math.cos(yaw)+side*Math.sin(yaw))*speed/len;player.group.position.x=THREE.MathUtils.clamp(player.group.position.x+dx,-10,10);player.group.position.z=THREE.MathUtils.clamp(player.group.position.z+dz,-12,12);if(forward||side){player.group.rotation.y=Math.atan2(dx,dz);}}
-player.group.position.y=0;
-if(praying){player.armL.rotation.z=-.85;player.armR.rotation.z=.85}else if(sitting){player.armL.rotation.z=-.45;player.armR.rotation.z=.45}else{player.armL.rotation.z=-.22+Math.sin(now*.009)*.08;player.armR.rotation.z=.22-Math.sin(now*.009)*.08}
-congregation.forEach((p,i)=>{p.group.position.y=.015*Math.sin(now*.0015+p.phase);p.armL.rotation.z=-.25+Math.sin(now*.001+p.phase)*.025;p.armR.rotation.z=.25-Math.sin(now*.001+p.phase)*.025});
+const moving=!sitting&&!praying&&(keys.has('w')||keys.has('s')||keys.has('a')||keys.has('d')||keys.has('arrowup')||keys.has('arrowdown')||keys.has('arrowleft')||keys.has('arrowright'));
+if(moving){const stride=Math.sin(now*.014)*.62;player.legL.rotation.x=stride;player.legR.rotation.x=-stride;player.body.position.y=.88+Math.abs(Math.sin(now*.014))*.045;player.armL.rotation.x=-stride*.32;player.armR.rotation.x=stride*.32;}
+else if(!sitting){player.legL.rotation.x=0;player.legR.rotation.x=0;player.body.position.y=.88;}
+if(praying){posePrayer(player,true);player.book.visible=false;}
+if(sitting){player.legL.rotation.x=-1.12;player.legR.rotation.x=-1.12;player.body.rotation.x=-.12;player.book.visible=true;player.armL.rotation.x=-.48;player.armR.rotation.x=-.48;player.armL.rotation.z=-.22;player.armR.rotation.z=.22;}
+congregation.forEach((p,i)=>{p.group.position.y=-.02+.012*Math.sin(now*.0015+p.phase);p.body.position.y=.88+.012*Math.sin(now*.0015+p.phase);p.armL.rotation.z=-.12+Math.sin(now*.001+p.phase)*.018;p.armR.rotation.z=.12-Math.sin(now*.001+p.phase)*.018;});
 const target=player.group.position.clone();const desired=new THREE.Vector3(target.x+Math.sin(yaw)*7,4.1,target.z+Math.cos(yaw)*7);camera.position.lerp(desired,.09);camera.lookAt(target.x,1.2,target.z-1.5);renderer.render(scene,camera)}
 requestAnimationFrame(animate);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8))});
